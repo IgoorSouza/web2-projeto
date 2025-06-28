@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: games
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+    database: postgresql
+    open-in-view: false
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  freemarker:
+    template-loader-path: classpath:/templates/
+    suffix: .ftl
+
+server:
+  port: 8080

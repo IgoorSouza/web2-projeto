@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    jpa:
+      database-platform: org.hibernate.dialect.H2Dialect
+      hibernate.ddl-auto: create-drop
+  application:
+    name: games
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+    database: postgresql
+    open-in-view: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  freemarker:
+    template-loader-path: classpath:/templates/
+    suffix: .ftl
+
+server:
+  port: 8080

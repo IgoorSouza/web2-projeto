@@ -1,0 +1,24 @@
+services:
+  db:
+    container_name: games-db
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: games
+      POSTGRES_PASSWORD: games
+      POSTGRES_DB: games
+
+  api:
+    container_name: games-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: jdbc:postgresql://games-db:5432/games
+    depends_on:
+      - db

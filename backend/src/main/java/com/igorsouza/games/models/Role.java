@@ -14,7 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "games")
+@Table(name = "roles")
 public class Role implements GrantedAuthority {
 
     @Id

@@ -7,6 +7,7 @@ import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
 import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
+import com.igorsouza.games.models.Role;
 import com.igorsouza.games.models.User;
 import com.igorsouza.games.services.jwt.JwtService;
 import com.igorsouza.games.services.mail.MailService;
@@ -41,7 +42,14 @@ public class AuthServiceImpl implements AuthService {
             }
 
             String token = jwtService.generateToken(user.getId());
-            return new LoginResponse(user.getName(), user.getEmail(), token, user.isEmailVerified(), user.isNotificationsEnabled());
+            return new LoginResponse(
+                    user.getName(),
+                    user.getEmail(),
+                    token,
+                    user.isEmailVerified(),
+                    user.isNotificationsEnabled(),
+                    user.getRoles().stream().map(Role::getName).toList()
+            );
         } catch (UsernameNotFoundException e) {
             throw new NotFoundException("User not found.");
         }

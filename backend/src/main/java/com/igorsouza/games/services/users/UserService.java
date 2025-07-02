@@ -15,10 +15,11 @@ public interface UserService {
     List<User> getUsersWithVerifiedEmailAndEnabledNotifications();
     User getUserByEmail(String email) throws NotFoundException;
     User getAuthenticatedUser() throws UnauthorizedException;
-    void createUser(NewUser newUser) throws ConflictException;
+    User createUser(NewUser newUser) throws ConflictException;
     void verifyUserEmail(User user);
     void updateAuthenticatedUser(UpdateUser user) throws UnauthorizedException, ConflictException;
     boolean toggleNotifications() throws UnauthorizedException;
     void changeUserPassword(ChangePassword passwords) throws BadRequestException, UnauthorizedException;
     void deleteAuthenticatedUser() throws UnauthorizedException;
+    void createAdmin(NewUser admin);
 }

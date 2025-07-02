@@ -28,3 +28,12 @@ spring:
 
 server:
   port: 8080
+
+app:
+  roles:
+    - ADMIN
+    - USER
+  admin:
+    name: ${ADMIN_NAME}
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}

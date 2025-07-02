@@ -5,10 +5,14 @@ import com.igorsouza.games.dtos.users.ChangePassword;
 import com.igorsouza.games.dtos.users.UpdateUser;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
+import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
+import com.igorsouza.games.models.Role;
 import com.igorsouza.games.models.User;
 import com.igorsouza.games.repositories.UserRepository;
+import com.igorsouza.games.services.roles.RoleService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,12 +24,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final RoleService roleService;
 
     @Override
     public List<User> getUsersWithVerifiedEmailAndEnabledNotifications() {
@@ -55,20 +61,26 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public void createUser(NewUser newUser) throws ConflictException {
+    public User createUser(NewUser newUser) throws ConflictException {
         Optional<User> existingUser = userRepository.findByEmail(newUser.getEmail());
 
         if (existingUser.isPresent()) {
             throw new ConflictException("Email already exists.");
         }
 
-        User user = User.builder()
-                .name(newUser.getName())
-                .email(newUser.getEmail())
-                .password(passwordEncoder.encode(newUser.getPassword()))
-                .build();
+        try {
+            Role userRole = roleService.getRoleByName("USER");
+            User user = User.builder()
+                    .name(newUser.getName())
+                    .email(newUser.getEmail())
+                    .password(passwordEncoder.encode(newUser.getPassword()))
+                    .roles(List.of(userRole))
+                    .build();
 
-        userRepository.save(user);
+            return userRepository.save(user);
+        } catch (NotFoundException e) {
+            throw new RuntimeException("User role does not exist.");
+        }
     }
 
     @Override
@@ -132,6 +144,21 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public void verifyUserEmail(User user) {
         user.setEmailVerified(true);
         userRepository.save(user);
+    }
+
+    @Override
+    public void createAdmin(NewUser admin) {
+        try {
+            User createdUser = createUser(admin);
+            Role adminRole = roleService.getRoleByName("ADMIN");
+
+            createdUser.setRoles(List.of(adminRole));
+            userRepository.save(createdUser);
+        } catch (ConflictException e) {
+            log.info("User with email {} already exists. Skipping creation.", admin.getEmail());
+        } catch (NotFoundException e) {
+            log.error("Admin role does not exist. Cannot assign role to user.");
+        }
     }
 
     public UUID getAuthenticatedUserId() {

@@ -2,10 +2,12 @@ package com.igorsouza.games.auth;
 
 import com.igorsouza.games.controllers.AuthController;
 import com.igorsouza.games.exceptions.ConflictException;
+import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
 import com.igorsouza.games.models.User;
 import com.igorsouza.games.services.auth.AuthService;
 import com.igorsouza.games.services.jwt.JwtService;
+import com.igorsouza.games.services.users.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +17,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -33,17 +38,29 @@ public class AuthControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
+    @MockitoBean
+    private UserService userService;
+
     private String testToken;
     private User testUser;
 
     @BeforeEach
-    void setup() {
-        testUser = new User();
-        testUser.setName("test");
-        testUser.setEmail("test@example.com");
-        testUser.setPassword("123456");
-        testUser.setEmailVerified(false);
+    void setup() throws NotFoundException  {
+        UUID testUserId = UUID.randomUUID();
+        testUser = new User(
+                testUserId,
+                "Igor",
+                "igor.castro@estudante.iftm.edu.br",
+                "password123",
+                false,
+                false,
+                List.of(),
+                List.of(),
+                List.of()
+        );
 
+        when(userService.getUserById(any())).thenReturn(testUser);
+        when(jwtService.validateToken(any())).thenReturn(String.valueOf(testUserId));
         when(jwtService.generateToken(any())).thenReturn("mocked-token");
         testToken = jwtService.generateToken(testUser.getId());
     }

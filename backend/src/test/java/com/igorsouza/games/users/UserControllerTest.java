@@ -2,11 +2,15 @@ package com.igorsouza.games.users;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igorsouza.games.controllers.UserController;
+import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
 import com.igorsouza.games.dtos.users.ChangePassword;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.enums.GamePlatform;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
+import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
+import com.igorsouza.games.models.User;
 import com.igorsouza.games.services.jwt.JwtService;
 import com.igorsouza.games.services.users.UserService;
 import org.junit.jupiter.api.AfterEach;
@@ -20,9 +24,12 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -46,14 +53,56 @@ public class UserControllerTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
-    void setup() {
+    void setup() throws NotFoundException {
+        UUID mockUserId = UUID.randomUUID();
+        User mockUser = new User(
+                mockUserId,
+                "Igor",
+                "igor.castro@estudante.iftm.edu.br",
+                "password123",
+                false,
+                false,
+                List.of(),
+                List.of(),
+                List.of()
+        );
+
+        when(userService.getUserById(any())).thenReturn(mockUser);
+        when(jwtService.validateToken(any())).thenReturn(String.valueOf(mockUserId));
         when(jwtService.generateToken(any())).thenReturn("mocked-token");
-        testToken = jwtService.generateToken(UUID.randomUUID());
+        testToken = jwtService.generateToken(mockUserId);
     }
 
     @AfterEach
     void resetMocks() {
         reset(userService, jwtService);
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("Deve retornar histórico de pesquisas do usuário com sucesso")
+    void shouldReturnSearchHistorySuccessfully() throws Exception {
+        List<UserGameSearchDTO> mockSearches = List.of(
+                new UserGameSearchDTO("Outer Wilds", GamePlatform.STEAM, new Date())
+        );
+
+        when(userService.getAuthenticatedUserSearches()).thenReturn(mockSearches);
+
+        mockMvc.perform(get("/user/searches")
+                        .header("Authorization", "Bearer " + testToken))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(userService, times(1)).getAuthenticatedUserSearches();
+    }
+
+    @Test
+    @DisplayName("Deve retornar 401 ao tentar buscar o histórico de pesquisas sem autenticação")
+    void shouldReturn401IfNotAuthenticated() throws Exception {
+        mockMvc.perform(get("/user/searches"))
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).getAuthenticatedUserSearches();
     }
 
     @Test

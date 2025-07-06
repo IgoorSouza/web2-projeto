@@ -7,6 +7,7 @@ interface AuthData {
   token: string;
   emailVerified: boolean;
   notificationsEnabled: boolean;
+  roles: string[];
 }
 
 interface AuthContextType {

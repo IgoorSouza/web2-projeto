@@ -27,7 +27,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<String> authorizationDeniedException(AuthorizationDeniedException e) {
-        return ResponseEntity.status(403).body("Você não possui permissão para acessar este recurso.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("Você não possui permissão para acessar este recurso.");
     }
 
     @ExceptionHandler(NotFoundException.class)
@@ -40,12 +41,5 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> conflictException(ConflictException e) {
         return ResponseEntity.status(e.getStatus())
                 .body(e.getMessage());
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> internalServerException(Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
     }
 }

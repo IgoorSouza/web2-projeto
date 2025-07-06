@@ -1,15 +1,19 @@
 package com.igorsouza.games.users;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.igorsouza.games.config.security.SecurityConfig;
 import com.igorsouza.games.controllers.UserController;
-import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
+import com.igorsouza.games.dtos.searches.UserGameSearch;
 import com.igorsouza.games.dtos.users.ChangePassword;
+import com.igorsouza.games.dtos.users.SetUserRoles;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.dtos.users.UserData;
 import com.igorsouza.games.enums.GamePlatform;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
 import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
+import com.igorsouza.games.models.Role;
 import com.igorsouza.games.models.User;
 import com.igorsouza.games.services.jwt.JwtService;
 import com.igorsouza.games.services.users.UserService;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -37,6 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 @WebMvcTest(UserController.class)
+@Import(SecurityConfig.class)
 public class UserControllerTest {
 
     @Autowired
@@ -49,13 +55,14 @@ public class UserControllerTest {
     private JwtService jwtService;
 
     private String testToken;
+    private User mockUser;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
     void setup() throws NotFoundException {
         UUID mockUserId = UUID.randomUUID();
-        User mockUser = new User(
+        mockUser = new User(
                 mockUserId,
                 "Igor",
                 "igor.castro@estudante.iftm.edu.br",
@@ -64,7 +71,7 @@ public class UserControllerTest {
                 false,
                 List.of(),
                 List.of(),
-                List.of()
+                List.of(new Role(UUID.randomUUID(), "SUPER_ADMIN"))
         );
 
         when(userService.getUserById(any())).thenReturn(mockUser);
@@ -79,11 +86,48 @@ public class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = "SUPER_ADMIN")
+    @DisplayName("Deve retornar todos os usuários com sucesso")
+    void shouldReturnAllUsersSuccessfully() throws Exception {
+        List<UserData> mockUsers = List.of(
+                new UserData(
+                        UUID.randomUUID(),
+                        "Igor",
+                        "igor@example.com",
+                        false,
+                        List.of("USER")
+                )
+        );
+
+        when(userService.getAllUsers()).thenReturn(mockUsers);
+
+        mockMvc.perform(get("/user/all")
+                        .header("Authorization", "Bearer " + testToken))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(userService, times(1)).getAllUsers();
+    }
+
+    @Test
+    @WithMockUser(authorities = "USER")
+    @DisplayName("Deve retornar 403 se o usuário não for SUPER_ADMIN ao buscar todos os usuários")
+    void shouldReturn403IfUserIsNotSuperAdminWhenGettingAllUsers() throws Exception {
+        mockUser.setRoles(List.of(new Role(UUID.randomUUID(), "USER")));
+
+        mockMvc.perform(get("/user/all")
+                        .header("Authorization", "Bearer " + testToken))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).getAllUsers();
+    }
+
+    @Test
     @WithMockUser
     @DisplayName("Deve retornar histórico de pesquisas do usuário com sucesso")
     void shouldReturnSearchHistorySuccessfully() throws Exception {
-        List<UserGameSearchDTO> mockSearches = List.of(
-                new UserGameSearchDTO("Outer Wilds", GamePlatform.STEAM, new Date())
+        List<UserGameSearch> mockSearches = List.of(
+                new UserGameSearch("Outer Wilds", GamePlatform.STEAM, new Date())
         );
 
         when(userService.getAuthenticatedUserSearches()).thenReturn(mockSearches);
@@ -267,6 +311,59 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(payload)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(authorities = "SUPER_ADMIN")
+    @DisplayName("Deve alterar as roles do usuário com sucesso")
+    void shouldSetUserRolesSuccessfully() throws Exception {
+        SetUserRoles payload = new SetUserRoles(UUID.randomUUID(), List.of("USER", "ADMIN"));
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User roles successfully set."));
+
+        verify(userService, times(1)).setUserRoles(any(SetUserRoles.class));
+    }
+
+    @Test
+    @WithMockUser(authorities = "SUPER_ADMIN")
+    @DisplayName("Deve retornar 404 se o usuário não for encontrado ao alterar roles")
+    void shouldReturn404WhenUserNotFoundWhileChangingRoles() throws Exception {
+        SetUserRoles payload = new SetUserRoles(UUID.randomUUID(), List.of("ADMIN"));
+
+        doThrow(new NotFoundException("User not found"))
+                .when(userService).setUserRoles(any());
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(payload)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
+    }
+
+
+    @Test
+    @WithMockUser(authorities = "USER")
+    @DisplayName("Deve retornar 403 se o usuário não for SUPER_ADMIN ao alterar roles")
+    void shouldReturn403IfUserIsNotSuperAdminWhenChangingRoles() throws Exception {
+        mockUser.setRoles(List.of(new Role(UUID.randomUUID(), "USER")));
+        SetUserRoles payload = new SetUserRoles(UUID.randomUUID(), List.of("ADMIN"));
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(payload)))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).setUserRoles(any());
     }
 
     @Test

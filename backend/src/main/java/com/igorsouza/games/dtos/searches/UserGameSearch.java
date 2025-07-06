@@ -12,7 +12,7 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserGameSearchDTO {
+public class UserGameSearch {
     private String gameName;
     private GamePlatform platform;
     private Date date;

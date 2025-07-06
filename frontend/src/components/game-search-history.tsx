@@ -2,15 +2,10 @@ import axios from "../lib/axios";
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/use-auth";
 import toast from "react-hot-toast";
+import { GameSearch } from "../types/game-search";
 
 interface GameSearchHistoryProps {
   onClose: () => void;
-}
-
-interface GameSearch {
-  gameName: string;
-  platform: "STEAM" | "EPIC";
-  date: Date;
 }
 
 export default function GameSearchHistory({ onClose }: GameSearchHistoryProps) {

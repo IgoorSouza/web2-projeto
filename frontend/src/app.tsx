@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/protected-route";
 import VerifyEmail from "./pages/auth/verify-email";
 import Navbar from "./components/nav-bar";
 import Profile from "./pages/profile";
+import Users from "./pages/users";
 
 export default function App() {
   return (
@@ -53,6 +54,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute>
+                <Users />
               </ProtectedRoute>
             }
           />

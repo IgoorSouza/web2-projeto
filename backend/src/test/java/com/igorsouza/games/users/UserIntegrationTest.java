@@ -2,10 +2,14 @@ package com.igorsouza.games.users;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igorsouza.games.dtos.users.ChangePassword;
+import com.igorsouza.games.dtos.users.SetUserRoles;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.exceptions.NotFoundException;
+import com.igorsouza.games.models.Role;
 import com.igorsouza.games.models.User;
 import com.igorsouza.games.repositories.UserRepository;
 import com.igorsouza.games.services.jwt.JwtService;
+import com.igorsouza.games.services.roles.RoleService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +22,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -41,20 +50,42 @@ public class UserIntegrationTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private RoleService roleService;
+
     private User testUser;
+    private User existingUser;
     private String testToken;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @BeforeEach
-    void setup() {
+    void setup() throws NotFoundException {
         testUser = new User();
         testUser.setName("test");
         testUser.setEmail("test@example.com");
         testUser.setPassword("123456");
         testUser.setEmailVerified(false);
+
+        List<Role> testUserRoles = new ArrayList<>();
+        testUserRoles.add(roleService.getRoleByName("SUPER_ADMIN"));
+        testUser.setRoles(testUserRoles);
+
         testUser = userRepository.save(testUser);
+
+        existingUser = new User();
+        existingUser.setName("existing");
+        existingUser.setEmail("existing@email.com");
+        existingUser.setPassword("123456");
+        existingUser.setEmailVerified(false);
+
+        List<Role> existingUserRoles = new ArrayList<>();
+        existingUserRoles.add(roleService.getRoleByName("USER"));
+        existingUser.setRoles(existingUserRoles);
+
+        existingUser = userRepository.save(existingUser);
+
         testToken = jwtService.generateToken(testUser.getId());
     }
 
@@ -223,6 +254,64 @@ public class UserIntegrationTest {
                         .content(mapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("The new password cannot be the same as the current password."));
+    }
+
+    @Test
+    @DisplayName("Deve atualizar roles com sucesso")
+    void shouldUpdateRolesSuccessfully() throws Exception {
+        SetUserRoles dto = new SetUserRoles(existingUser.getId(), List.of("ADMIN"));
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+
+        User updatedUser = userRepository.findById(existingUser.getId()).orElseThrow();
+        assertThat(updatedUser.getRoles()).extracting(Role::getName).containsExactly("ADMIN");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 ao tentar atribuir role SUPER_ADMIN diretamente")
+    void shouldReturn400WhenAssigningSuperAdminRoleDirectly() throws Exception {
+        SetUserRoles dto = new SetUserRoles(existingUser.getId(), List.of("SUPER_ADMIN"));
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Cannot assign SUPER_ADMIN role directly."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 ao tentar alterar roles de um usuário SUPER_ADMIN")
+    void shouldReturn400WhenChangingRolesOfSuperAdminUser() throws Exception {
+        SetUserRoles dto = new SetUserRoles(testUser.getId(), List.of("USER"));
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Cannot change roles of a SUPER_ADMIN user."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 se o papel não existir")
+    void shouldReturn404IfRoleNotFound() throws Exception {
+        SetUserRoles dto = new SetUserRoles(existingUser.getId(), List.of("ROLE"));
+
+        mockMvc.perform(put("/user/roles")
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + testToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Role with name ROLE not found."));
     }
 
     @Test

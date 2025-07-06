@@ -1,9 +1,11 @@
 package com.igorsouza.games.services.users;
 
 import com.igorsouza.games.dtos.auth.NewUser;
-import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
+import com.igorsouza.games.dtos.searches.UserGameSearch;
 import com.igorsouza.games.dtos.users.ChangePassword;
+import com.igorsouza.games.dtos.users.SetUserRoles;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.dtos.users.UserData;
 import com.igorsouza.games.enums.GamePlatform;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
@@ -11,7 +13,6 @@ import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
 import com.igorsouza.games.models.Role;
 import com.igorsouza.games.models.User;
-import com.igorsouza.games.models.UserGameSearch;
 import com.igorsouza.games.repositories.UserRepository;
 import com.igorsouza.games.services.roles.RoleService;
 import com.igorsouza.games.services.search.UserGameSearchService;
@@ -24,6 +25,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +39,19 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final RoleService roleService;
     private final UserGameSearchService userGameSearchService;
+
+    @Override
+    public List<UserData> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(user -> new UserData(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.isEmailVerified(),
+                        user.getRoles().stream().map(Role::getName).toList())
+                ).toList();
+    }
 
     @Override
     public List<User> getUsersWithVerifiedEmailAndEnabledNotifications() {
@@ -72,13 +87,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public List<UserGameSearchDTO> getAuthenticatedUserSearches() throws UnauthorizedException {
+    public List<UserGameSearch> getAuthenticatedUserSearches() throws UnauthorizedException {
         User authenticatedUser = getAuthenticatedUser();
-        List<UserGameSearch> userSearches =
+        List<com.igorsouza.games.models.UserGameSearch> userSearches =
                 userGameSearchService.getUserSearches(authenticatedUser.getId());
 
         return userSearches.stream().map(search ->
-            new UserGameSearchDTO(search.getGameName(), search.getPlatform(), search.getCreatedAt())
+            new UserGameSearch(search.getGameName(), search.getPlatform(), search.getCreatedAt())
         ).toList();
     }
 
@@ -157,6 +172,30 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
+    public void setUserRoles(SetUserRoles userRoles) throws BadRequestException, NotFoundException {
+        if (userRoles.getRoles().stream().anyMatch(role -> role.equals("SUPER_ADMIN"))) {
+            throw new BadRequestException("Cannot assign SUPER_ADMIN role directly.");
+        }
+
+        User user = getUserById(userRoles.getUserId());
+        boolean userIsSuperAdmin = user.getAuthorities().stream().anyMatch(role -> role.getName().equals("SUPER_ADMIN"));
+
+        if (userIsSuperAdmin) {
+            throw new BadRequestException("Cannot change roles of a SUPER_ADMIN user.");
+        }
+
+        List<Role> roles = new ArrayList<>();
+
+        for (String roleName : userRoles.getRoles()) {
+            Role role = roleService.getRoleByName(roleName);
+            roles.add(role);
+        }
+
+        user.setRoles(roles);
+        userRepository.save(user);
+    }
+
+    @Override
     public void deleteAuthenticatedUser() throws UnauthorizedException {
         User user = getAuthenticatedUser();
         userRepository.delete(user);
@@ -172,9 +211,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public void createSuperAdmin(NewUser superAdmin) {
         try {
             User createdUser = createUser(superAdmin);
-            Role adminRole = roleService.getRoleByName("SUPER_ADMIN");
+            Role superAdminRole = roleService.getRoleByName("SUPER_ADMIN");
+            Role userRole = roleService.getRoleByName("USER");
 
-            createdUser.setRoles(List.of(adminRole));
+            createdUser.setRoles(List.of(superAdminRole, userRole));
             userRepository.save(createdUser);
         } catch (ConflictException e) {
             log.info("User with email {} already exists. Skipping creation.", superAdmin.getEmail());

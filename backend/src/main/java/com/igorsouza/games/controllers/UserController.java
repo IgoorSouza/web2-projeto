@@ -1,14 +1,18 @@
 package com.igorsouza.games.controllers;
 
-import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
+import com.igorsouza.games.dtos.searches.UserGameSearch;
 import com.igorsouza.games.dtos.users.ChangePassword;
+import com.igorsouza.games.dtos.users.SetUserRoles;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.dtos.users.UserData;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
+import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
 import com.igorsouza.games.services.users.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,8 +25,14 @@ public class UserController {
 
     private final UserService userService;
 
+    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
+    @GetMapping("/all")
+    public ResponseEntity<List<UserData>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
     @GetMapping("/searches")
-    public ResponseEntity<List<UserGameSearchDTO>> getUserSearches() throws UnauthorizedException {
+    public ResponseEntity<List<UserGameSearch>> getUserSearches() throws UnauthorizedException {
         return ResponseEntity.ok(userService.getAuthenticatedUserSearches());
     }
 
@@ -43,6 +53,14 @@ public class UserController {
             throws BadRequestException, UnauthorizedException {
         userService.changeUserPassword(passwords);
         return ResponseEntity.ok("Password successfully changed.");
+    }
+
+    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
+    @PutMapping("/roles")
+    public ResponseEntity<String> changeUserRole(@RequestBody SetUserRoles userRoles)
+            throws BadRequestException, NotFoundException {
+        userService.setUserRoles(userRoles);
+        return ResponseEntity.ok("User roles successfully set.");
     }
 
     @DeleteMapping

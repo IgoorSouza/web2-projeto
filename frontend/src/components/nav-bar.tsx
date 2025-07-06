@@ -20,10 +20,27 @@ export default function Navbar() {
           { path: "/profile", label: "Perfil" },
         ];
 
+  const superAdminPages = authData?.roles.includes("SUPER_ADMIN")
+    ? [{ path: "/users", label: "Usuários" }]
+    : undefined;
+
   return (
     <nav className="flex items-center justify-between bg-gradient-to-b from-zinc-900 to-zinc-800 text-white p-4 shadow-md px-16">
       <ul className="flex gap-8 items-center">
         {pages.map((link) => (
+          <li key={link.path}>
+            <Link
+              to={link.path}
+              className={`text-lg hover:text-zinc-400 transition ${
+                location.pathname === link.path ? "text-zinc-400 font-bold" : ""
+              }`}
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+
+        {superAdminPages?.map((link) => (
           <li key={link.path}>
             <Link
               to={link.path}

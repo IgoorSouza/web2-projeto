@@ -1,16 +1,20 @@
 package com.igorsouza.games.services.users;
 
 import com.igorsouza.games.dtos.auth.NewUser;
+import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
 import com.igorsouza.games.dtos.users.ChangePassword;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.enums.GamePlatform;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
 import com.igorsouza.games.exceptions.NotFoundException;
 import com.igorsouza.games.exceptions.UnauthorizedException;
 import com.igorsouza.games.models.Role;
 import com.igorsouza.games.models.User;
+import com.igorsouza.games.models.UserGameSearch;
 import com.igorsouza.games.repositories.UserRepository;
 import com.igorsouza.games.services.roles.RoleService;
+import com.igorsouza.games.services.search.UserGameSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +36,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final RoleService roleService;
+    private final UserGameSearchService userGameSearchService;
 
     @Override
     public List<User> getUsersWithVerifiedEmailAndEnabledNotifications() {
@@ -64,6 +69,17 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
 
         return user.get();
+    }
+
+    @Override
+    public List<UserGameSearchDTO> getAuthenticatedUserSearches() throws UnauthorizedException {
+        User authenticatedUser = getAuthenticatedUser();
+        List<UserGameSearch> userSearches =
+                userGameSearchService.getUserSearches(authenticatedUser.getId());
+
+        return userSearches.stream().map(search ->
+            new UserGameSearchDTO(search.getGameName(), search.getPlatform(), search.getCreatedAt())
+        ).toList();
     }
 
     @Override
@@ -165,6 +181,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         } catch (NotFoundException e) {
             log.error("Admin role does not exist. Cannot assign role to user.");
         }
+    }
+
+    public void saveUserGameSearch(String gameName, GamePlatform platform) throws UnauthorizedException {
+        userGameSearchService.saveSearch(gameName, platform, getAuthenticatedUser());
     }
 
     public UUID getAuthenticatedUserId() {

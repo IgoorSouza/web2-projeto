@@ -22,7 +22,14 @@ export default function App() {
         <Navbar />
 
         <Routes>
-          <Route path="/" element={<Games />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Games />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/wishlist"
             element={
@@ -46,6 +53,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <Games />
               </ProtectedRoute>
             }
           />

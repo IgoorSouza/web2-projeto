@@ -27,7 +27,12 @@ export default function Games() {
       setLoading(true);
 
       const response = await axios.get(
-        `/games/${gameStore}?gameName=${search}`
+        `/games/${gameStore}?gameName=${search}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData!.token}`,
+          },
+        }
       );
 
       setGames(response.data);
@@ -45,13 +50,6 @@ export default function Games() {
 
   async function addGameToWishlist(game: Game) {
     try {
-      if (!authData) {
-        toast.error(
-          "Você deve estar autenticado(a) para adicionar jogos à sua lista de desejos."
-        );
-        return;
-      }
-
       setLoading(true);
 
       await axios.post(
@@ -62,7 +60,7 @@ export default function Games() {
         },
         {
           headers: {
-            Authorization: `Bearer ${authData.token}`,
+            Authorization: `Bearer ${authData!.token}`,
           },
         }
       );

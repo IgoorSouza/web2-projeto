@@ -7,12 +7,14 @@ import com.igorsouza.games.dtos.games.steam.SteamGamePriceOverview;
 import com.igorsouza.games.enums.GamePlatform;
 import com.igorsouza.games.exceptions.ConflictException;
 import com.igorsouza.games.exceptions.NotFoundException;
+import com.igorsouza.games.exceptions.UnauthorizedException;
 import com.igorsouza.games.models.Game;
 import com.igorsouza.games.models.GameId;
 import com.igorsouza.games.models.User;
 import com.igorsouza.games.repositories.GamesRepository;
 import com.igorsouza.games.services.integrations.epic.EpicGamesStoreService;
 import com.igorsouza.games.services.integrations.steam.SteamService;
+import com.igorsouza.games.services.users.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -26,16 +28,19 @@ public class GameServiceImpl implements GameService {
 
     private final SteamService steamService;
     private final EpicGamesStoreService epicGamesStoreService;
+    private final UserService userService;
     private final GamesRepository gamesRepository;
 
     @Override
-    public List<GenericGame> getSteamGames(String gameName) {
+    public List<GenericGame> getSteamGames(String gameName) throws UnauthorizedException {
+        saveGameSearch(gameName, GamePlatform.STEAM);
         List<SteamGameDetails> games = steamService.getGames(gameName);
         return games.stream().map(this::formatSteamGame).toList();
     }
 
     @Override
-    public List<GenericGame> getEpicStoreGames(String gameName) {
+    public List<GenericGame> getEpicStoreGames(String gameName) throws UnauthorizedException {
+        saveGameSearch(gameName, GamePlatform.EPIC);
         List<EpicGamesStoreGame> games = epicGamesStoreService.getGames(gameName);
         List<EpicGamesStoreGame> availableGames = filterAvailableEpicStoreGames(games);
         return availableGames.stream().map(this::formatEpicStoreGame).toList();
@@ -79,6 +84,10 @@ public class GameServiceImpl implements GameService {
         }
 
         gamesRepository.deleteById(gameId);
+    }
+
+    private void saveGameSearch(String gameName, GamePlatform platform) throws UnauthorizedException {
+        userService.saveUserGameSearch(gameName, platform);
     }
 
     private GenericGame formatSteamGame(SteamGameDetails game) {

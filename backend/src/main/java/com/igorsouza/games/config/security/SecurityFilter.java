@@ -28,8 +28,6 @@ public class SecurityFilter extends OncePerRequestFilter {
     private static final String[] AUTH_WHITELIST = {
             "/auth/register",
             "/auth/login",
-            "/games/steam",
-            "/games/epic"
     };
 
     @Override

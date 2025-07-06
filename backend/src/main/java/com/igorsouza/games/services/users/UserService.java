@@ -1,8 +1,10 @@
 package com.igorsouza.games.services.users;
 
 import com.igorsouza.games.dtos.auth.NewUser;
+import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
 import com.igorsouza.games.dtos.users.ChangePassword;
 import com.igorsouza.games.dtos.users.UpdateUser;
+import com.igorsouza.games.enums.GamePlatform;
 import com.igorsouza.games.exceptions.BadRequestException;
 import com.igorsouza.games.exceptions.ConflictException;
 import com.igorsouza.games.exceptions.NotFoundException;
@@ -17,6 +19,7 @@ public interface UserService {
     User getUserByEmail(String email) throws NotFoundException;
     User getUserById(UUID id) throws NotFoundException;
     User getAuthenticatedUser() throws UnauthorizedException;
+    List<UserGameSearchDTO> getAuthenticatedUserSearches() throws UnauthorizedException;
     User createUser(NewUser newUser) throws ConflictException;
     void verifyUserEmail(User user);
     void updateAuthenticatedUser(UpdateUser user) throws UnauthorizedException, ConflictException;
@@ -24,4 +27,5 @@ public interface UserService {
     void changeUserPassword(ChangePassword passwords) throws BadRequestException, UnauthorizedException;
     void deleteAuthenticatedUser() throws UnauthorizedException;
     void createSuperAdmin(NewUser superAdmin);
+    void saveUserGameSearch(String gameName, GamePlatform platform) throws UnauthorizedException;
 }

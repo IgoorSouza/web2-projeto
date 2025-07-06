@@ -1,5 +1,6 @@
 package com.igorsouza.games.controllers;
 
+import com.igorsouza.games.dtos.searches.UserGameSearchDTO;
 import com.igorsouza.games.dtos.users.ChangePassword;
 import com.igorsouza.games.dtos.users.UpdateUser;
 import com.igorsouza.games.exceptions.BadRequestException;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -17,6 +20,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+
+    @GetMapping("/searches")
+    public ResponseEntity<List<UserGameSearchDTO>> getUserSearches() throws UnauthorizedException {
+        return ResponseEntity.ok(userService.getAuthenticatedUserSearches());
+    }
 
     @PutMapping
     public ResponseEntity<String> updateUser(@RequestBody UpdateUser user) throws UnauthorizedException, ConflictException {

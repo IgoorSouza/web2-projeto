@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import eye from "../assets/eye.svg";
 import eyeClosed from "../assets/eye-closed.svg";
+import GameSearchHistory from "../components/game-search-history";
 
 export default function Profile() {
   const { authData, logout, updateAuthData } = useAuth();
@@ -19,6 +20,7 @@ export default function Profile() {
   const [showCurrentPassword, setShowCurrentPassword] =
     useState<boolean>(false);
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
+  const [showSearchHistory, setShowSearchHistory] = useState<boolean>(false);
   const [showDeleteAccountConfirmation, setShowDeleteAccountConfirmation] =
     useState<boolean>(false);
 
@@ -302,13 +304,32 @@ export default function Profile() {
               type="button"
               onClick={sendVerificationEmail}
               disabled={loading}
-              className={`px-4 py-2 bg-white text-black rounded-md ${
+              className={`w-[100px] px-4 py-2 bg-white text-black rounded-md ${
                 loading ? "opacity-70" : "cursor-pointer hover:opacity-70"
               }`}
             >
               Solicitar
             </button>
           )}
+        </div>
+
+        <hr className="border-gray-600 my-5" />
+
+        <div className="flex items-center justify-between">
+          <label htmlFor="notifications" className="text-lg">
+            Histórico de Pesquisa de Jogos
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setShowSearchHistory(true)}
+            disabled={loading}
+            className={`w-[100px] px-4 py-2 bg-white text-black rounded-md ${
+              loading ? "opacity-70" : "cursor-pointer hover:opacity-70"
+            }`}
+          >
+            Visualizar
+          </button>
         </div>
 
         <hr className="border-gray-600 my-5" />
@@ -359,6 +380,10 @@ export default function Profile() {
             </div>
           </div>
         </>
+      )}
+
+      {showSearchHistory && (
+        <GameSearchHistory onClose={() => setShowSearchHistory(false)} />
       )}
     </>
   );

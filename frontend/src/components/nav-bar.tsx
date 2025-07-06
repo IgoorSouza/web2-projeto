@@ -1,32 +1,29 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/use-auth";
 import user from "../assets/user.svg";
 
 export default function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { authData, logout } = useAuth();
 
-  const pages = [{ path: "/", label: "Buscar Jogos" }];
-  const protectedPages = [
-    ...pages,
-    { path: "/wishlist", label: "Lista de Desejos" },
-    { path: "/profile", label: "Perfil" },
-  ];
-
-  function handleLogout() {
-    logout();
-
-    const protectedPaths = protectedPages.map(({ path }) => path);
-    if (protectedPaths.includes(location.pathname)) {
-      navigate("/");
-    }
-  }
+  const pages =
+    !authData &&
+    (location.pathname === "/auth/login" ||
+      location.pathname === "/auth/register")
+      ? [
+          { path: "/auth/login", label: "Login" },
+          { path: "/auth/register", label: "Criar Conta" },
+        ]
+      : [
+          { path: "/", label: "Buscar Jogos" },
+          { path: "/wishlist", label: "Lista de Desejos" },
+          { path: "/profile", label: "Perfil" },
+        ];
 
   return (
     <nav className="flex items-center justify-between bg-gradient-to-b from-zinc-900 to-zinc-800 text-white p-4 shadow-md px-16">
       <ul className="flex gap-8 items-center">
-        {(authData ? protectedPages : pages).map((link) => (
+        {pages.map((link) => (
           <li key={link.path}>
             <Link
               to={link.path}
@@ -40,32 +37,23 @@ export default function Navbar() {
         ))}
       </ul>
 
-      <div className="flex items-center gap-x-3">
-        <img src={user} className="w-[40px]" />
+      {authData && (
+        <div className="flex items-center gap-x-3">
+          <img src={user} className="w-[40px]" />
 
-        {authData ? (
-          <>
-            <div className="text-right">
-              <p className="text-sm font-semibold">{authData.name}</p>
-              <p className="text-xs">{authData.email}</p>
-            </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold">{authData.name}</p>
+            <p className="text-xs">{authData.email}</p>
+          </div>
 
-            <button
-              onClick={handleLogout}
-              className="bg-white text-black px-4 py-2 rounded-lg text-sm cursor-pointer font-semibold hover:bg-gray-300"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <Link
-            to="/auth/login"
+          <button
+            onClick={logout}
             className="bg-white text-black px-4 py-2 rounded-lg text-sm cursor-pointer font-semibold hover:bg-gray-300"
           >
-            Login
-          </Link>
-        )}
-      </div>
+            Logout
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

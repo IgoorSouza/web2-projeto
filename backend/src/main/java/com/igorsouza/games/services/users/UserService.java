@@ -10,10 +10,12 @@ import com.igorsouza.games.exceptions.UnauthorizedException;
 import com.igorsouza.games.models.User;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface UserService {
     List<User> getUsersWithVerifiedEmailAndEnabledNotifications();
     User getUserByEmail(String email) throws NotFoundException;
+    User getUserById(UUID id) throws NotFoundException;
     User getAuthenticatedUser() throws UnauthorizedException;
     User createUser(NewUser newUser) throws ConflictException;
     void verifyUserEmail(User user);
@@ -21,5 +23,5 @@ public interface UserService {
     boolean toggleNotifications() throws UnauthorizedException;
     void changeUserPassword(ChangePassword passwords) throws BadRequestException, UnauthorizedException;
     void deleteAuthenticatedUser() throws UnauthorizedException;
-    void createAdmin(NewUser admin);
+    void createSuperAdmin(NewUser superAdmin);
 }

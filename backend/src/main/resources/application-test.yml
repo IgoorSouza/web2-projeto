@@ -35,9 +35,10 @@ server:
 
 app:
   roles:
+    - SUPER_ADMIN
     - ADMIN
     - USER
-  admin:
-    name: ${ADMIN_NAME}
-    email: ${ADMIN_EMAIL}
-    password: ${ADMIN_PASSWORD}
+  super-admin:
+    name: ${SUPER_ADMIN_NAME}
+    email: ${SUPER_ADMIN_EMAIL}
+    password: ${SUPER_ADMIN_PASSWORD}

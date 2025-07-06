@@ -30,7 +30,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final RoleService roleService;
 
     @Override
@@ -42,6 +42,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public User getUserByEmail(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email).orElseThrow(() ->
                 new UsernameNotFoundException("User not found."));
+    }
+
+    @Override
+    public User getUserById(UUID id) throws NotFoundException {
+        return userRepository.findById(id).orElseThrow(() ->
+                new NotFoundException("User not found."));
     }
 
     @Override
@@ -147,22 +153,21 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public void createAdmin(NewUser admin) {
+    public void createSuperAdmin(NewUser superAdmin) {
         try {
-            User createdUser = createUser(admin);
-            Role adminRole = roleService.getRoleByName("ADMIN");
+            User createdUser = createUser(superAdmin);
+            Role adminRole = roleService.getRoleByName("SUPER_ADMIN");
 
             createdUser.setRoles(List.of(adminRole));
             userRepository.save(createdUser);
         } catch (ConflictException e) {
-            log.info("User with email {} already exists. Skipping creation.", admin.getEmail());
+            log.info("User with email {} already exists. Skipping creation.", superAdmin.getEmail());
         } catch (NotFoundException e) {
             log.error("Admin role does not exist. Cannot assign role to user.");
         }
     }
 
     public UUID getAuthenticatedUserId() {
-        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return UUID.fromString(userId);
+        return (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }

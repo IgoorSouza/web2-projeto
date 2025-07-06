@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 @Configuration
-@ConfigurationProperties(prefix = "app.admin")
-public class AdminConfig {
+@ConfigurationProperties(prefix = "app.super-admin")
+public class SuperAdminConfig {
     private String name;
     private String email;
     private String password;

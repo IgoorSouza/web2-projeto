@@ -24,7 +24,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
     private final MailService mailService;
     private final JwtService jwtService;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
     public void register(NewUser user) throws ConflictException {

@@ -1,7 +1,9 @@
 package com.igorsouza.games.config.security;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.igorsouza.games.models.User;
 import com.igorsouza.games.services.jwt.JwtService;
+import com.igorsouza.games.services.users.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,13 +16,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class SecurityFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserService userService;
 
     private static final String[] AUTH_WHITELIST = {
             "/auth/register",
@@ -47,12 +50,20 @@ public class SecurityFilter extends OncePerRequestFilter {
         }
 
         try {
-            String userId = jwtService.validateToken(token);
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());
+            UUID userId = UUID.fromString(jwtService.validateToken(token));
+            User user = userService.getUserById(userId);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    userId,
+                    null,
+                    user.getAuthorities()
+            );
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);
         } catch (JWTVerificationException e) {
             sendErrorResponse(response, "Token de autenticação inválido ou expirado.");
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao processar o token de autenticação.", e);
         }
     }
 

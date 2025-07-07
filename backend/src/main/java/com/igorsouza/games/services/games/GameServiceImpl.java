@@ -1,6 +1,9 @@
 package com.igorsouza.games.services.games;
 
+import com.igorsouza.games.dtos.games.CreateReview;
 import com.igorsouza.games.dtos.games.GenericGame;
+import com.igorsouza.games.dtos.games.Review;
+import com.igorsouza.games.dtos.games.UpdateReview;
 import com.igorsouza.games.dtos.games.epic.*;
 import com.igorsouza.games.dtos.games.steam.SteamGameDetails;
 import com.igorsouza.games.dtos.games.steam.SteamGamePriceOverview;
@@ -14,13 +17,13 @@ import com.igorsouza.games.models.User;
 import com.igorsouza.games.repositories.GamesRepository;
 import com.igorsouza.games.services.integrations.epic.EpicGamesStoreService;
 import com.igorsouza.games.services.integrations.steam.SteamService;
+import com.igorsouza.games.services.reviews.GameReviewService;
 import com.igorsouza.games.services.users.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class GameServiceImpl implements GameService {
     private final SteamService steamService;
     private final EpicGamesStoreService epicGamesStoreService;
     private final UserService userService;
+    private final GameReviewService gameReviewService;
     private final GamesRepository gamesRepository;
 
     @Override
@@ -84,6 +88,31 @@ public class GameServiceImpl implements GameService {
         }
 
         gamesRepository.deleteById(gameId);
+    }
+
+    @Override
+    public Review getGameReview(String gameName) throws NotFoundException {
+        return gameReviewService.getGameReview(gameName);
+    }
+
+    @Override
+    public String generateGameReview(String gameName) throws ConflictException, InterruptedException {
+        return gameReviewService.generateGameReview(gameName);
+    }
+
+    @Override
+    public void reviewGame(CreateReview createReview) throws ConflictException {
+        gameReviewService.reviewGame(createReview.getGameName(), createReview.getReview());
+    }
+
+    @Override
+    public Review updateGameReview(UUID reviewId, UpdateReview updateReview) throws NotFoundException {
+        return gameReviewService.updateGameReview(reviewId, updateReview.getReview());
+    }
+
+    @Override
+    public void deleteGameReview(UUID reviewId) throws NotFoundException {
+        gameReviewService.deleteGameReview(reviewId);
     }
 
     private void saveGameSearch(String gameName, GamePlatform platform) throws UnauthorizedException {

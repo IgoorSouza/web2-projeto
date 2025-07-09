@@ -74,7 +74,7 @@ export default function Login() {
           type={showPassword ? "text" : "password"}
           id="password"
           required
-          min={6}
+          minLength={6}
           className="w-full p-2"
           onChange={(event) => setPassword(event.target.value)}
         />

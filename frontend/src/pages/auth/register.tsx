@@ -45,7 +45,6 @@ export default function Register() {
         type="text"
         id="name"
         required
-        min={2}
         className="border-1 border-black rounded-md mt-1 mb-3 p-2"
         onChange={(event) => setName(event.target.value)}
       />
@@ -65,7 +64,7 @@ export default function Register() {
           type={showPassword ? "text" : "password"}
           id="password"
           required
-          min={6}
+          minLength={6}
           className="w-full p-2"
           onChange={(event) => setPassword(event.target.value)}
         />

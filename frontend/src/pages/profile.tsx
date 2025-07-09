@@ -223,7 +223,7 @@ export default function Profile() {
                 type={showCurrentPassword ? "text" : "password"}
                 id="currentPassword"
                 required
-                min={6}
+                minLength={6}
                 className="w-full p-2 rounded-l-md border bg-white text-black"
                 onChange={(event) => setCurrentPassword(event.target.value)}
               />
@@ -248,7 +248,7 @@ export default function Profile() {
                 type={showNewPassword ? "text" : "password"}
                 id="newPassword"
                 required
-                min={6}
+                minLength={6}
                 className="w-full p-2 rounded-l-md border bg-white text-black"
                 onChange={(event) => setNewPassword(event.target.value)}
               />

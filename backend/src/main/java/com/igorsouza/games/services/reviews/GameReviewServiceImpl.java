@@ -19,7 +19,7 @@ public class GameReviewServiceImpl implements GameReviewService {
     private final AzureService azureService;
     private final GameReviewRepository gameReviewRepository;
 
-    public String generateGameReview(String gameName) throws ConflictException, InterruptedException {
+    public Review generateGameReview(String gameName) throws ConflictException, InterruptedException {
         String normalizedGameName = normalizeGameName(gameName);
         Optional<GameReview> existingReview = gameReviewRepository.findByGameName(normalizedGameName);
 
@@ -34,8 +34,15 @@ public class GameReviewServiceImpl implements GameReviewService {
                 .aiGenerated(true)
                 .build();
 
-        gameReviewRepository.save(gameReview);
-        return review;
+        gameReview = gameReviewRepository.save(gameReview);
+
+        return new Review(
+                gameReview.getId(),
+                gameReview.getReview(),
+                gameReview.isAiGenerated(),
+                gameReview.getCreatedAt(),
+                gameReview.getUpdatedAt()
+        );
     }
 
     public Review getGameReview(String gameName) throws NotFoundException {
@@ -55,7 +62,7 @@ public class GameReviewServiceImpl implements GameReviewService {
         );
     }
 
-    public void reviewGame(String gameName, String review) throws ConflictException {
+    public Review reviewGame(String gameName, String review) throws ConflictException {
         Optional<GameReview> existingReview = gameReviewRepository.findByGameName(normalizeGameName(gameName));
 
         if (existingReview.isPresent()) {
@@ -68,7 +75,15 @@ public class GameReviewServiceImpl implements GameReviewService {
                 .aiGenerated(false)
                 .build();
 
-        gameReviewRepository.save(gameReview);
+        gameReview = gameReviewRepository.save(gameReview);
+
+        return new Review(
+                gameReview.getId(),
+                gameReview.getReview(),
+                gameReview.isAiGenerated(),
+                gameReview.getCreatedAt(),
+                gameReview.getUpdatedAt()
+        );
     }
 
     public Review updateGameReview(UUID id, String review) throws NotFoundException {

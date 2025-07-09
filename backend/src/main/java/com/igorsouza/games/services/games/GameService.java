@@ -22,8 +22,8 @@ public interface GameService {
     void saveGame(Game game) throws ConflictException;
     void removeGame(Game game) throws NotFoundException;
     Review getGameReview(String gameName) throws NotFoundException;
-    String generateGameReview(String gameName) throws ConflictException, InterruptedException;
-    void reviewGame(CreateReview createReview) throws ConflictException;
+    Review generateGameReview(String gameName) throws ConflictException, InterruptedException;
+    Review reviewGame(CreateReview createReview) throws ConflictException;
     Review updateGameReview(UUID reviewId, UpdateReview updateReview) throws NotFoundException;
     void deleteGameReview(UUID reviewId) throws NotFoundException;
 }

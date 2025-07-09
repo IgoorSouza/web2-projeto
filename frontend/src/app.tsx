@@ -10,6 +10,7 @@ import VerifyEmail from "./pages/auth/verify-email";
 import Navbar from "./components/nav-bar";
 import Profile from "./pages/profile";
 import Users from "./pages/users";
+import Reviews from "./pages/reviews";
 
 export default function App() {
   return (
@@ -28,6 +29,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Games />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reviews"
+            element={
+              <ProtectedRoute>
+                <Reviews />
               </ProtectedRoute>
             }
           />

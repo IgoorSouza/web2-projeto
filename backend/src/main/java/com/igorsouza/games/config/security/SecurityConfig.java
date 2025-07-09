@@ -23,7 +23,8 @@ public class SecurityConfig {
     private final SecurityFilter securityFilter;
 
     private static final String[] AUTH_WHITELIST = {
-            "/auth/**",
+            "/auth/register",
+            "/auth/login"
     };
 
     @Bean

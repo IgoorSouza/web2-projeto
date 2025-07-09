@@ -16,6 +16,7 @@ export default function Navbar() {
         ]
       : [
           { path: "/", label: "Buscar Jogos" },
+          { path: "/reviews", label: "Reviews de Jogos" },
           { path: "/wishlist", label: "Lista de Desejos" },
           { path: "/profile", label: "Perfil" },
         ];

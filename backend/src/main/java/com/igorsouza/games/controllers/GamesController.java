@@ -43,17 +43,17 @@ public class GamesController {
     }
 
     @PostMapping("/generate-review")
-    public ResponseEntity<String> generateGameReview(@RequestParam String gameName)
+    public ResponseEntity<Review> generateGameReview(@RequestParam String gameName)
             throws ConflictException, InterruptedException {
-        String review = gameService.generateGameReview(gameName);
+        Review review = gameService.generateGameReview(gameName);
         return ResponseEntity.ok(review);
     }
 
     @PostMapping("/review")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<String> reviewGame(@RequestBody CreateReview createReview) throws ConflictException {
-        gameService.reviewGame(createReview);
-        return ResponseEntity.ok("Review successfully created.");
+    public ResponseEntity<Review> reviewGame(@RequestBody CreateReview createReview) throws ConflictException {
+        Review review = gameService.reviewGame(createReview);
+        return ResponseEntity.ok(review);
     }
 
     @PutMapping("/review/{reviewId}")

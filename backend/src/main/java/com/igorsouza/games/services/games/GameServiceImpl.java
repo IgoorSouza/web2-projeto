@@ -96,13 +96,13 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public String generateGameReview(String gameName) throws ConflictException, InterruptedException {
+    public Review generateGameReview(String gameName) throws ConflictException, InterruptedException {
         return gameReviewService.generateGameReview(gameName);
     }
 
     @Override
-    public void reviewGame(CreateReview createReview) throws ConflictException {
-        gameReviewService.reviewGame(createReview.getGameName(), createReview.getReview());
+    public Review reviewGame(CreateReview createReview) throws ConflictException {
+        return gameReviewService.reviewGame(createReview.getGameName(), createReview.getReview());
     }
 
     @Override
